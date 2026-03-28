@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Hệ thống Quản trị BĐS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f4f7f6; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; background: #eee; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { cursor: pointer; border: none; border-radius: 4px; padding: 10px 15px; }
+        .btn-save { background: #27ae60; color: white; grid-column: span 3; font-size: 16px; }
+        .btn-edit { background: #2980b9; color: white; margin-right: 5px; }
+        .btn-delete { background: #c0392b; color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; font-size: 14px; }
+        th { background: #34495e; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2><i class="fa fa-user-shield"></i> Quản lý Bất động sản</h2>
+    <hr>
+    
+    <div class="form-grid" id="adminForm">
+        <div class="field-group">
+            <label>Mã BĐS (Tự động):</label>
+            <input type="text" id="ma_bat_dong_san" style="background: #e9ecef;">
+        </div>
+        <div class="field-group" style="grid-column: span 2;">
+            <label>Tiêu đề:</label>
+            <input type="text" id="tieu_de">
+        </div>
+
+        <input type="number" id="gia_vnd" placeholder="Giá VNĐ">
+        <input type="number" id="gia_usd" placeholder="Giá USD">
+        <input type="number" id="gia_jpy" placeholder="Giá JPY">
+        <input type="number" id="gia_moi_m2" placeholder="Giá/m2">
+        <div class="checkbox-group">
+            <input type="checkbox" id="co_thuong_luong"> <label>Có thương lượng</label>
+        </div>
+        <div class="checkbox-group">
+            <input type="checkbox" id="tin_noi_bat"> <label>Tin nổi bật</label>
+        </div>
+
+        <input type="text" id="quoc_gia" placeholder="Quốc gia">
+        <input type="text" id="thanh_pho" placeholder="Thành phố">
+        <input type="text" id="quan_huyen" placeholder="Quận / Huyện">
+        <input type="text" id="phuong_xa" placeholder="Phường / Xã">
+        <input type="text" id="ten_duong" placeholder="Tên đường">
+        <div style="display: flex; gap: 5px;">
+            <input type="text" id="vi_do" placeholder="Vĩ độ">
+            <input type="text" id="kinh_do" placeholder="Kinh độ">
+        </div>
+
+        <input type="number" id="tong_dien_tich" placeholder="Diện tích (m2)">
+        <input type="number" id="so_phong_ngu" placeholder="Số phòng ngủ">
+        <input type="number" id="so_phong_tam" placeholder="Số phòng tắm">
+        <input type="number" id="so_tang" placeholder="Số tầng">
+
+        <select id="loai_bat_dong_san">
+            <option value="">-- Loại BĐS --</option>
+            <option value="Phòng">Phòng</option>
+            <option value="Nhà">Nhà</option>
+            <option value="Căn hộ">Căn hộ</option>
+            <option value="Đất">Đất</option>
+        </select>
+        <select id="loai_giao_dich">
+            <option value="Bán">Bán</option>
+            <option value="Cho thuê">Cho thuê</option>
+        </select>
+        <select id="trang_thai">
+            <option value="Còn bán">Còn bán</option>
+            <option value="Còn cho thuê">Còn cho thuê</option>
+            <option value="Đã bán">Đã bán</option>
+            <option value="Đã cho thuê">Đã cho thuê</option>
+        </select>
+
+        <input type="text" id="tinh_trang_phap_ly" placeholder="Pháp lý (Sổ đỏ...)">
+        <input type="text" id="hinh_thuc_so_huu" placeholder="Sở hữu (Mãi mãi...)">
+
+        <textarea id="mo_ta_chi_tiet" style="grid-column: span 3;" placeholder="Mô tả chi tiết..."></textarea>
+
+        <div class="search-box" style="margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px;">
+            <label>Nhập mã BĐS để sửa nhanh:</label>
+            <input type="text" id="search_ma_bds" placeholder="Ví dụ: BDS100" style="width: 200px;">
+            <button onclick="fetchPropertyData()" style="background: #34495e; color: white;">Tải dữ liệu</button>
+        </div>
+
+        <div class="form-grid" id="adminForm">
+            <div class="field-group" style="grid-column: span 3;">
+                <label>Hình ảnh bất động sản:</label>
+                <input type="file" id="anh_bds" multiple accept="image/*">
+                <div id="preview_images" style="display: flex; gap: 10px; margin-top: 10px;"></div>
+            </div>
+        </div>
+        <div style="margin-top: 10px; display: flex; gap: 10px;">
+            <button type="button" id="btn-delete-property" 
+                    style="background: #e74c3c; color: white; display: none; width: 200px;" 
+                    onclick="deleteProperty()">
+                <i class="fa-solid fa-trash"></i> Xóa bất động sản này
+            </button>
+        </div>
+        <button class="btn-save" onclick="saveData()">Lưu dữ liệu</button>
+    </div>
+</div>
+
+<script>
+
+
+// Hàm xóa
+function deleteItem(id) {
+    if(confirm('Bạn có chắc muốn xóa không?')) {
+        fetch(`/api/admin/delete/${id}`, { method: 'DELETE' })
+        .then(() => location.reload());
+    }
+}
+
+async function deleteProperty() {
+    const ma = document.getElementById('ma_bat_dong_san').value;
+    if (!ma) return;
+
+    if (confirm(`Bạn có chắc chắn muốn XÓA vĩnh viễn bất động sản mã ${ma} không? Hành động này không thể hoàn tác!`)) {
+        try {
+            const response = await fetch(`/api/admin/delete/${ma}`, {
+                method: 'DELETE'
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                alert(result.message);
+                location.reload(); // Tải lại trang để xóa sạch form
+            } else {
+                alert("Lỗi: " + result.message);
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Đã xảy ra lỗi khi kết nối với máy chủ.");
+        }
+    }
+}
+
+
+
+// Hàm tự động tạo mã mới khi trang load xong
+function generateNextID() {
+    const rows = document.querySelectorAll("#dataTable tr td:first-child");
+    let maxNum = 0;
+    
+    rows.forEach(td => {
+        const code = td.innerText; // Ví dụ "BDS100"
+        const num = parseInt(code.replace("BDS", ""));
+        if (!isNaN(num) && num > maxNum) maxNum = num;
+    });
+
+    document.getElementById("ma_bat_dong_san").value = "BDS" + (maxNum + 1);
+}
+
+// Gọi hàm này sau khi dữ liệu bảng đã load xong
+window.onload = generateNextID;
+
+
+// 2. Hàm lưu dữ liệu (bao gồm cả ảnh)
+function saveData() {
+    // 1. Thu thập dữ liệu - Sử dụng toán tử ?. hoặc kiểm tra tồn tại để tránh lỗi null
+    const data = {
+        ma_bat_dong_san: document.getElementById('ma_bat_dong_san').value,
+        tieu_de: document.getElementById('tieu_de').value,
+        mo_ta_chi_tiet: document.getElementById('mo_ta_chi_tiet').value,
+        
+        // Giá
+        gia_vnd: parseFloat(document.getElementById('gia_vnd').value) || 0,
+        gia_usd: parseFloat(document.getElementById('gia_usd').value) || 0,
+        gia_jpy: parseFloat(document.getElementById('gia_jpy').value) || 0,
+        gia_moi_m2: parseFloat(document.getElementById('gia_moi_m2').value) || 0,
+        
+        // Vị trí
+        quoc_gia: document.getElementById('quoc_gia').value,
+        thanh_pho: document.getElementById('thanh_pho').value,
+        quan_huyen: document.getElementById('quan_huyen').value,
+        phuong_xa: document.getElementById('phuong_xa').value,
+        ten_duong: document.getElementById('ten_duong').value,
+        vi_do: parseFloat(document.getElementById('vi_do').value) || 0,
+        kinh_do: parseFloat(document.getElementById('kinh_do').value) || 0,
+        
+        // Thông số kỹ thuật
+        tong_dien_tich: parseFloat(document.getElementById('tong_dien_tich').value) || 0,
+        so_phong_ngu: parseInt(document.getElementById('so_phong_ngu').value) || 0,
+        so_phong_tam: parseInt(document.getElementById('so_phong_tam').value) || 0,
+        so_tang: parseInt(document.getElementById('so_tang').value) || 0,
+        
+        // Phân loại & Trạng thái
+        loai_bat_dong_san: document.getElementById('loai_bat_dong_san').value,
+        loai_giao_dich: document.getElementById('loai_giao_dich').value,
+        tinh_trang_phap_ly: document.getElementById('tinh_trang_phap_ly').value,
+        hinh_thuc_so_huu: document.getElementById('hinh_thuc_so_huu').value,
+        trang_thai: document.getElementById('trang_thai').value,
+        
+        // Checkbox
+        co_thuong_luong: document.getElementById('co_thuong_luong').checked,
+        tin_noi_bat: document.getElementById('tin_noi_bat').checked
+    };
+
+    const formData = new FormData();
+    formData.append('json_data', JSON.stringify(data));
+
+    // SỬA TẠI ĐÂY: Đổi 'images' thành 'anh_bds' cho đúng với HTML của bạn
+    const imageInput = document.getElementById('anh_bds'); 
+    if (imageInput && imageInput.files.length > 0) {
+        for (let i = 0; i < imageInput.files.length; i++) {
+            formData.append('images', imageInput.files[i]);
+        }
+    }
+
+    // 3. Gửi request 
+    fetch('/api/admin/save', {
+        method: 'POST',
+        body: formData 
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.status === 'success') {
+            alert('Lưu thành công!');
+            location.reload();
+        } else {
+            alert('Lỗi: ' + (result.message || 'Không thể lưu'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra trong quá trình gửi dữ liệu.');
+    });
+}
+function deleteImage(maBds, filename) {
+    if(confirm('Bạn có chắc muốn xóa ảnh này?')) {
+        fetch('/api/admin/delete_image', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ ma_bds: maBds, filename: filename })
+        }).then(res => res.json()).then(data => {
+            if(data.status === 'success') fetchPropertyData(); // Tải lại danh sách ảnh
+        });
+    }
+}
+async function fetchPropertyData() {
+    const ma = document.getElementById('search_ma_bds').value;
+    
+    if (!ma) {
+        alert("Vui lòng nhập mã BĐS!");
+        return;
+    }
+
+    const response = await fetch(`/api/admin/get/${ma}`);
+    
+    if (response.ok) {
+        const item = await response.json();
+        
+        // 1. Điền các ô input text và number (Đầy đủ các trường)
+        const textFields = [
+            'ma_bat_dong_san', 'tieu_de', 'gia_vnd', 'gia_usd', 'gia_jpy', 
+            'gia_moi_m2', 'quoc_gia', 'thanh_pho', 'quan_huyen', 'phuong_xa', 
+            'ten_duong', 'vi_do', 'kinh_do', 'tong_dien_tich', 
+            'so_phong_ngu', 'so_phong_tam', 'so_tang', 
+            'tinh_trang_phap_ly', 'hinh_thuc_so_huu'
+        ];
+
+        textFields.forEach(field => {
+            const element = document.getElementById(field);
+            if (element) {
+                // Đảm bảo không bị hiện chữ 'null' nếu dữ liệu trống
+                element.value = item[field] !== null ? item[field] : "";
+            }
+        });
+
+        // 2. Điền Textarea
+        document.getElementById('mo_ta_chi_tiet').value = item.mo_ta_chi_tiet || "";
+
+        // 3. Điền các Select Box (Dropdown)
+        document.getElementById('loai_bat_dong_san').value = item.loai_bat_dong_san || "";
+        document.getElementById('loai_giao_dich').value = item.loai_giao_dich || "";
+        document.getElementById('trang_thai').value = item.trang_thai || "Còn bán";
+
+        // 4. Xử lý các Checkbox (Boolean)
+        document.getElementById('tin_noi_bat').checked = Boolean(item.tin_noi_bat);
+        document.getElementById('co_thuong_luong').checked = Boolean(item.co_thuong_luong);
+
+        // 5. Hiển thị danh sách ảnh cũ để quản lý
+        const previewContainer = document.getElementById('preview_images');
+        previewContainer.innerHTML = "<strong>Ảnh hiện có: </strong><br>"; 
+        
+        if (item.images && item.images.length > 0) {
+            item.images.forEach(imgName => {
+                const imgWrapper = document.createElement('div');
+                imgWrapper.style.cssText = "position:relative; display:inline-block; margin-right:10px;";
+                imgWrapper.innerHTML = `
+                    <img src="/property_images/${item.ma_bat_dong_san}/${imgName}" 
+                         width="100" height="75" style="border:1px solid #ddd; border-radius:4px; object-fit: cover;">
+                    <button onclick="deleteImage('${item.ma_bat_dong_san}', '${imgName}')" 
+                            style="position:absolute; top:-5px; right:-5px; background:red; color:white; 
+                                   border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; 
+                                   font-size:12px; line-height:15px; text-align:center;">×</button>
+                `;
+                previewContainer.appendChild(imgWrapper);
+            });
+
+        
+        } else {
+            previewContainer.innerHTML += "<em>Chưa có ảnh nào.</em>";
+        }
+
+        // Thông báo cho người dùng biết dữ liệu đã tải xong
+        console.log("Đã tải dữ liệu cho mã: " + ma);
+        // Trong hàm fetchPropertyData() cũ của bạn, thêm dòng này vào cuối khối "if (response.ok)"
+        document.getElementById('btn-delete-property').style.display = 'block';
+    } else {
+        alert("Không tìm thấy bất động sản với mã: " + ma);
+    }
+}
+
+
+
+async function editItem(ma_bds) {
+    try {
+        const response = await fetch(`/api/admin/get/${ma_bds}`);
+        const item = await response.json();
+
+        // 1. Tự động điền cho các trường Input, Select, Textarea thông thường
+        const fields = [
+            'ma_bat_dong_san', 'ma_noi_bo', 'tieu_de', 'mo_ta_chi_tiet',
+            'gia_vnd', 'gia_usd', 'gia_jpy', 'gia_moi_m2',
+            'quoc_gia', 'thanh_pho', 'quan_huyen', 'phuong_xa',
+            'vi_do', 'kinh_do', 'loai_bat_dong_san', 'loai_giao_dich',
+            'tong_dien_tich', 'dien_tich_su_dung', 'so_phong_ngu', 'so_phong_tam',
+            'so_tang', 'huong_nha', 'tinh_trang_phap_ly', 'hinh_thuc_so_huu', 'trang_thai'
+        ];
+
+        fields.forEach(f => {
+            const el = document.getElementById(f);
+            if (el) el.value = item[f] !== null ? item[f] : "";
+        });
+
+        // 2. Điền cho các trường Checkbox (Boolean)
+        document.getElementById('co_thuong_luong').checked = !!item.co_thuong_luong;
+        document.getElementById('tin_noi_bat').checked = !!item.tin_noi_bat;
+
+        // 3. Hiển thị ảnh cũ để quản lý
+        const previewContainer = document.getElementById('preview_images');
+        previewContainer.innerHTML = "<strong>Ảnh hiện có:</strong><br>";
+        item.images.forEach(imgName => {
+            previewContainer.innerHTML += `
+                <div style="display:inline-block; position:relative; margin:5px;">
+                    <img src="/property_images/${item.ma_bat_dong_san}/${imgName}" width="80" style="border:1px solid #ccc">
+                    <button type="button" onclick="deleteImage('${item.ma_bat_dong_san}', '${imgName}')" 
+                            style="position:absolute; top:0; right:0; background:red; color:white; border:none; cursor:pointer;">×</button>
+                </div>`;
+        });
+
+        // Cuộn lên đầu trang để admin thấy form đã điền
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } catch (error) {
+        console.error("Lỗi khi lấy dữ liệu:", error);
+        alert("Không thể tải dữ liệu BĐS này.");
+    }
+}
+</script>
+</body>
+</html>

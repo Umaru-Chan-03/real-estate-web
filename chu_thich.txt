@@ -1,0 +1,13 @@
+Available	Còn bán / còn cho thuê
+Sold	Đã bán
+Rented	Đã cho thuê
+Hidden	Đã ẩn khỏi website
+Draft	Tin nháp (chưa đăng)
+
+
+1. loại giao dịch: Bán / cho thuê / tất cả
+2. loại bất động sản: Phòng / nhà / căn hộ / đất
+3. tổng diện tích:  min - max (m2)
+4. vị trí: quốc gia - thành phố
+5. giá: min - max (đơn vị - VND - USD - Man)
+6. số phòng ngủ: min - max

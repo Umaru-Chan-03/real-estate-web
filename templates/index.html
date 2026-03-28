@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ ui.website_title }}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<header class="header">
+
+    <div class="logo-container">
+        {% if ui.logo_image %}
+            <img src="{{ url_for('static', filename=ui.logo_image) }}" class="logo-img">
+        {% endif %}
+        <span class="logo-text" data-key="logo_text">
+            REAL ESTATE PRO
+        </span>
+    </div>
+
+    <nav class="menu">
+        <a href="/" data-key="menu_home">Trang chủ</a>
+        <a href="/ban" data-key="menu_ban">Bán</a>
+        <a href="/thue" data-key="menu_thue">Cho thuê</a>
+    </nav>
+
+    <div class="header-right">
+
+        <!-- Language -->
+        <div class="language-switch">
+            <span class="lang-item" data-lang="VI" onclick="changeLanguage('VI')">VI</span>
+            <span class="lang-item" data-lang="EN" onclick="changeLanguage('EN')">EN</span>
+            <span class="lang-item" data-lang="JP" onclick="changeLanguage('JP')">JP</span>
+        </div>
+
+        <!-- Admin -->
+        <div class="admin-dropdown">
+            <button class="admin-btn">Admin <i class="fas fa-caret-down"></i></button>
+            <div class="dropdown-content">
+                <a href="#" onclick="showLoginForm()">Đăng nhập</a>
+                <a href="#" onclick="showChangePassForm()">Đổi mật khẩu</a>
+            </div>
+        </div>
+
+        <div id="loginModal" class="modal">
+            <div class="modal-content admin-form">
+                <span class="close" onclick="closeModal('loginModal')">&times;</span>
+                <h2>Quản trị viên</h2>
+                <input type="password" id="adminPassword" placeholder="Nhập mật khẩu quản trị...">
+                <button onclick="handleLogin()">Xác nhận</button>
+            </div>
+        </div>
+
+    </div>
+
+</header>
+
+<!-- FILTER SECTION -->
+<section class="filter-section">
+    <form id="filterForm" action="/" method="get">
+        <select id="loai_giao_dich" name="loai_giao_dich">
+            <option value="" data-key="filter_transaction">Loại giao dịch</option>
+            <option value="ban" data-key="opt_buy">Bán</option>
+            <option value="thue" data-key="opt_rent">Cho thuê</option>
+        </select>
+
+        <select id="loai_bds" name="loai_bds">
+            <option value="" data-key="filter_type">Loại bất động sản</option>
+            <option value="Nhà" data-key="opt_nha">Nhà</option>
+            <option value="Căn hộ" data-key="opt_can_ho">Căn hộ</option>
+            <option value="Đất" data-key="opt_dat">Đất</option>
+            <option value="Phòng" data-key="opt_phong">Phòng</option>
+        </select>
+
+        <select id="ten_quoc_gia" name="ten_quoc_gia">
+            <option value="" data-key="filter_country">Quốc gia</option>
+            <option value="VN" data-key="opt_vn">Việt Nam</option>
+            <option value="JP" data-key="opt_jp">Nhật Bản</option>
+        </select>
+
+        <!-- THÊM COMBOBOX THÀNH PHỐ -->
+        <select id="ten_thanh_pho" name="ten_thanh_pho">
+            <option value=""  data-key="city">Thành phố</option>
+        </select>
+
+        <select id="don_vi_tien" name="don_vi_tien">
+            <option value="" data-key="filter_currency">Tiền tệ</option>
+            <option value="VND" >VND</option>
+            <option value="USD" >USD</option>
+            <option value="JPY" >JPY</option>
+        </select>
+    
+        <select id="gia_min" name="gia_min">
+            <option value="" data-key="filter_min_price">Giá thấp nhất</option>
+        </select>
+    
+        <select id="gia_max" name="gia_max">
+            <option value="" data-key="filter_max_price">Giá cao nhất</option>
+        </select>
+    
+        <span id="don_vi_hien_thi"></span>
+
+
+        <input type = "number" 
+            name = "dien_tich_min" 
+            min = "1" 
+            data-key = "placeholder_min_area" 
+            placeholder = "Diện tích nhỏ nhất (m2)" 
+            value = "{{ selected_filters.dien_tich_min or '' }}">
+
+        <input type = "number" 
+            name = "dien_tich_max" 
+            min = "1" 
+            data-key = "placeholder_max_area" 
+            placeholder = "Diện tích lớn nhất (m2)" 
+            value = "{{ selected_filters.dien_tich_max or '' }}">
+    
+        <button type="submit" class="btn-filter" data-key="btn_filter">Lọc</button>
+    </form>
+</section>
+<main class="content-container">
+    
+    <section class="listing-column">
+        <div id="list-view" class="property-grid">
+
+        {% if all_bds|length == 0 %}
+
+        <div class="no-result">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <p>Không tìm thấy bất động sản phù hợp</p>
+        </div>
+
+        {% else %}
+
+        {% for bds in all_bds %}
+        <div class="property-card"
+            data-id="{{ bds.ma_bat_dong_san }}"
+            onmouseenter="focusMarker('{{ bds.ma_bat_dong_san }}')"
+            onclick="showDetail('{{ bds.ma_bat_dong_san }}')">
+
+            <div class="property-image">
+
+                {% if bds.danh_sach_hinh_anh and bds.danh_sach_hinh_anh|length > 0 %}
+                <img src="/property_images/{{ bds.ma_bat_dong_san }}/{{ bds.danh_sach_hinh_anh[0].ten_hinh_anh }}"
+                    alt="{{ bds.tieu_de }}"
+                    loading="lazy">
+                {% else %}
+                <img src="https://via.placeholder.com/400x250?text=No+Image" loading="lazy">
+                {% endif %}
+
+                <span class="badge-status">
+                    {{ bds.loai_giao_dich | capitalize }}
+                </span>
+
+            </div>
+
+            <div class="property-info">
+
+                <h3 class="property-title">
+                    {{ bds.tieu_de }}
+                </h3>
+
+                <p class="property-price">
+                    {{ "{:,.0f}".format(bds.gia_vnd) }} ₫
+                </p>
+
+                <p class="property-location">
+                    <i class="fa-solid fa-location-dot"></i>
+                    {{ bds.quan_huyen }}, {{ bds.thanh_pho }}
+                </p>
+
+                <div class="property-specs">
+
+                    <span>
+                        <i class="fa-solid fa-bed"></i>
+                        {{ bds.so_phong_ngu }}
+                    </span>
+
+                    <span>
+                        <i class="fa-solid fa-vector-square"></i>
+                        {{ bds.tong_dien_tich }} m²
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+        {% endfor %}
+
+        {% endif %}
+
+        </div>
+
+        <div class="pagination">
+
+            {% if pagination.has_prev %}
+            <a href="?page={{ pagination.prev_num }}">«</a>
+            {% endif %}
+
+            {% for p in pagination.iter_pages() %}
+
+                {% if p %}
+                    <a href="?page={{p}}"
+                    class="{% if p == pagination.page %}active{% endif %}">
+                    {{p}}
+                    </a>
+                {% else %}
+                    <span>...</span>
+                {% endif %}
+
+            {% endfor %}
+
+            {% if pagination.has_next %}
+            <a href="?page={{ pagination.next_num }}">»</a>
+            {% endif %}
+
+        </div>
+
+        <div id="detail-view" style="display: none;">
+            <button class="btn-back" onclick="hideDetail()">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span data-key="back_to_list">Quay lại danh sách</span>
+            </button>
+            <div id="detail-content">
+                </div>
+        </div>
+    </section>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <section class="map-column">
+        <div id="map" style="height: 100vh; width: 100%; position: sticky; top: 0;"></div>
+    </section>
+
+    <script>
+        window.propertyData = {{ bds_json | tojson }};
+    </script>
+
+</main>
+<script>
+    const FILTER_DATA = {{ filter_data | tojson }};
+    const SELECTED_FILTERS = {{ selected_filters | tojson }};
+</script>
+<script src="/static/script.js" defer></script>
+
+</body>
+</html>
